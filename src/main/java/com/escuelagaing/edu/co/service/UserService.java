@@ -4,7 +4,7 @@ package com.escuelagaing.edu.co.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.escuelagaing.edu.co.repository.UserRepository;
-import com.escuelagaing.edu.co.Exception.UserServiceException;
+import com.escuelagaing.edu.co.exception.UserServiceException;
 import com.escuelagaing.edu.co.dto.RoomStateDTO;
 import com.escuelagaing.edu.co.model.User;
 
