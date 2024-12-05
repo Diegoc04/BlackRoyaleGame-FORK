@@ -20,6 +20,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
 public class BlackJackSocketIOConfig {
+    private static final String SALA_PREFIX = "Sala ";
+    private static final String ERROR_PREFIX = "error";
+    private static final String BETERROR_PREFIX = "betError";
     private final SocketIOServer server;
     private final UserService userService;
     private final RoomService roomService;
@@ -131,7 +134,7 @@ private DisconnectListener onDisconnected() {
                 // Si después de eliminar, la sala queda vacía
                 if (room.getPlayers().isEmpty()) {
                     room.resetRoom();
-                    System.out.println("Sala " + roomId + " reiniciada y puesta en estado EN_ESPERA.");
+                    System.out.println(SALA_PREFIX + roomId + " reiniciada y puesta en estado EN_ESPERA.");
                 }
 
                 sendRoomUpdate(roomId);
@@ -153,7 +156,7 @@ private DataListener<JoinRoomPayload> joinRoomListener() {
         String roomId = data.getRoomId();
 
         if (playerId == null || roomId == null) {
-            client.sendEvent("error", "Datos insuficientes para unirse a la sala.");
+            client.sendEvent(ERROR_PREFIX, "Datos insuficientes para unirse a la sala.");
             return;
         }
 
@@ -167,7 +170,7 @@ private DataListener<JoinRoomPayload> joinRoomListener() {
         // Obtener el jugador desde el servicio de usuarios
         Optional<User> userOptional = userService.getUserById(playerId);
         if (!userOptional.isPresent()) {
-            client.sendEvent("error", "Usuario no encontrado con ID: " + playerId);
+            client.sendEvent(ERROR_PREFIX, "Usuario no encontrado con ID: " + playerId);
             return;
         }
 
@@ -187,10 +190,10 @@ private DataListener<JoinRoomPayload> joinRoomListener() {
         }
 
         if (room.getStatus() == RoomStatus.EN_JUEGO) {
-            client.sendEvent("error", "No puedes unirte. El juego ya ha comenzado.");
+            client.sendEvent(ERROR_PREFIX, "No puedes unirte. El juego ya ha comenzado.");
             return;
         } else if (room.getStatus() == RoomStatus.FINALIZADO) {
-            client.sendEvent("error", "El juego ha finalizado.");
+            client.sendEvent(ERROR_PREFIX, "El juego ha finalizado.");
             return;
         }
 
@@ -202,7 +205,7 @@ private DataListener<JoinRoomPayload> joinRoomListener() {
             sendRoomUpdate(roomId);
             System.out.println("Enviando actualización de la sala después de que el jugador se una");
         } else {
-            client.sendEvent("error", "La sala ya está llena o no se puede unir.");
+            client.sendEvent(ERROR_PREFIX, "La sala ya está llena o no se puede unir.");
         }
     };
 }
@@ -217,7 +220,7 @@ private DataListener<ChatMessage> chatMessageListener() {
         // Verificar que la sala existe
         Room room = rooms.get(roomId);
         if (room == null) {
-            client.sendEvent("error", "La sala no existe.");
+            client.sendEvent(ERROR_PREFIX, "La sala no existe.");
             return;
         }
 
@@ -249,10 +252,10 @@ private DataListener<String> leaveRoomListener() {
             // Si la sala queda vacía, reiníciala para que esté disponible nuevamente.
             if (room.getPlayers().isEmpty()) {
                 room.resetRoom();
-                System.out.println("Sala " + roomId + " reiniciada y puesta en estado EN_ESPERA.");
+                System.out.println(SALA_PREFIX + roomId + " reiniciada y puesta en estado EN_ESPERA.");
             } else if (room.getPlayers().size() < room.getMinPlayers() && room.getStatus() == RoomStatus.EN_JUEGO) {
                 room.setStatus(RoomStatus.FINALIZADO); // Cambiar estado si no hay jugadores suficientes.
-                System.out.println("Sala " + roomId + " marcada como FINALIZADA.");
+                System.out.println(SALA_PREFIX + roomId + " marcada como FINALIZADA.");
             }
 
             sendRoomUpdate(roomId); // Notifica a los clientes sobre el cambio en la sala.
@@ -287,13 +290,13 @@ private DataListener<String> leaveRoomListener() {
                         }
 
                     } else {
-                        client.sendEvent("betError", "Saldo insuficiente o color de ficha no válido para esta apuesta.");
+                        client.sendEvent(BETERROR_PREFIX, "Saldo insuficiente o color de ficha no válido para esta apuesta.");
                     }
                 } else {
-                    client.sendEvent("betError", "Jugador no encontrado en la sala.");
+                    client.sendEvent(BETERROR_PREFIX, "Jugador no encontrado en la sala.");
                 }
             } else {
-                client.sendEvent("betError", "No se puede realizar la apuesta en este momento.");
+                client.sendEvent(BETERROR_PREFIX, "No se puede realizar la apuesta en este momento.");
             }
         };
     }

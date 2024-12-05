@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.annotation.Transient;
 
 public class Game {
-
+    private static final String JUGADOR_PREFIX = "Jugador ";
     private static final Logger logger = LoggerFactory.getLogger(Game.class);
 
     private List<Player> players;
@@ -126,9 +126,9 @@ public void decideAction(Player player, PlayerAction action) {
         case HIT:
         player.addCard(deck.drawCard());
         int currentScore = player.calculateScore();
-        logger.info("Jugador " + player.getName() + " realizó HIT - Puntuación actual: " + currentScore);
+        logger.info(JUGADOR_PREFIX + player.getName() + " realizó HIT - Puntuación actual: " + currentScore);
         if (currentScore > 21) {
-            logger.info("Jugador " + player.getName() + " se pasó de 21. Fin de turno.");
+            logger.info(JUGADOR_PREFIX + player.getName() + " se pasó de 21. Fin de turno.");
             player.setfinishTurn(true);
             player.setInTurn(false);
         }
@@ -223,7 +223,7 @@ public void decideAction(Player player, PlayerAction action) {
             logger.info("Jugador: " + player.getName() + " - Cartas: " + player.getHand() + SCORE_TEXT + playerScore);
     
             if (playerScore > 21) {
-                logger.info("Jugador " + player.getName() + " se pasó de 21.");
+                logger.info(JUGADOR_PREFIX + player.getName() + " se pasó de 21.");
                 continue; 
             }
     
