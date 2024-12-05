@@ -269,8 +269,6 @@ private boolean addPlayerToRoom(SocketIOClient client, Room room, Player player,
 }
 
 
-
-
 private DataListener<ChatMessage> chatMessageListener() {
     return (client, message, ackSender) -> {
         String roomId = message.getRoomId(); // ID de la sala del mensaje
@@ -323,42 +321,41 @@ private DataListener<String> leaveRoomListener() {
 }
 
 
-    private DataListener<BetPayload> playerBetListener() {
-        return (client, data, ackSender) -> {
-            String roomId = data.getRoomId();
-            List<String> chipColors = data.getFichas();
+private DataListener<BetPayload> playerBetListener() {
+    return (client, data, ackSender) -> {
+        String roomId = data.getRoomId();
+        List<String> chipColors = data.getFichas();
+        logger.info("Evento playerBet recibido con las fichas: {}", chipColors);
+        logger.info("roomId recibido: {}", roomId);
 
-            logger.info("Evento playerBet recibido con las fichas: {}", chipColors);
-            logger.info("roomId recibido: {}", roomId);
+        Room room = rooms.get(roomId);
+        if (room == null || room.getStatus() != RoomStatus.EN_APUESTAS) {
+            client.sendEvent(BETERROR_PREFIX, "No se puede realizar la apuesta en este momento.");
+            return;
+        }
 
-            String playerId = socketToPlayerId.get(client.getSessionId().toString());
+        String playerId = socketToPlayerId.get(client.getSessionId().toString());
+        Player player = room.getPlayerById(playerId);
+        if (player == null) {
+            client.sendEvent(BETERROR_PREFIX, "Jugador no encontrado en la sala.");
+            return;
+        }
 
-            Room room = rooms.get(roomId);
-            if (room != null && room.getStatus() == RoomStatus.EN_APUESTAS) {
-                Player player = room.getPlayerById(playerId);
-                if (player != null) {
-                    if (player.placeBet(chipColors)) {
-                        player.setHasCompletedBet(true);
-                        logger.info("Apuesta realizada por {}: {}", player.getName(), player.getBet());
-                        logger.info("Saldo después de apuesta: {}", player.getAmount());
-                        sendRoomUpdate(roomId);
-                        boolean allPlayersCompletedBet = room.getPlayers().stream().allMatch(Player::hasCompletedBet);
-                        if (allPlayersCompletedBet) {
-                            room.endBetting();
-                            sendRoomUpdate(roomId);
-                        }
+        if (player.placeBet(chipColors)) {
+            player.setHasCompletedBet(true);
+            logger.info("Apuesta realizada por {}: {}", player.getName(), player.getBet());
+            sendRoomUpdate(roomId);
 
-                    } else {
-                        client.sendEvent(BETERROR_PREFIX, "Saldo insuficiente o color de ficha no válido para esta apuesta.");
-                    }
-                } else {
-                    client.sendEvent(BETERROR_PREFIX, "Jugador no encontrado en la sala.");
-                }
-            } else {
-                client.sendEvent(BETERROR_PREFIX, "No se puede realizar la apuesta en este momento.");
+            if (room.getPlayers().stream().allMatch(Player::hasCompletedBet)) {
+                room.endBetting();
+                sendRoomUpdate(roomId);
             }
-        };
-    }
+        } else {
+            client.sendEvent(BETERROR_PREFIX, "Saldo insuficiente o color de ficha no válido para esta apuesta.");
+        }
+    };
+}
+
 
     private DataListener<PlayerActionPayload> playerActionListener() {
         return (client, data, ackSender) -> {
