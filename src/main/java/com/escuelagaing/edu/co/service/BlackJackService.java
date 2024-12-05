@@ -6,11 +6,14 @@ import com.escuelagaing.edu.co.model.Room;
 import com.escuelagaing.edu.co.repository.BlackJackRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 
 @Service
 public class BlackJackService {
+    private static final Logger logger = LoggerFactory.getLogger(BlackJackService.class);
 
     private final BlackJackRepository roomRepository;
    
@@ -61,7 +64,7 @@ public class BlackJackService {
         });
         room.addPlayer(player);
         roomRepository.save(room); // Guardar en MongoDB
-        System.out.println("Rooms saved to MongoDB: " + roomRepository.findAll());
+        logger.info("Rooms saved to MongoDB: {}", roomRepository.findAll());
     }
 
     public void startGame(Room room) {

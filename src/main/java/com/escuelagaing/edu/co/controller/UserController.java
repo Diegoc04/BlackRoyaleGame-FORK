@@ -12,11 +12,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @CrossOrigin("*")
 @RequestMapping("/users")
 public class UserController {
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
     private final UserService userService;
 
@@ -29,7 +32,7 @@ public class UserController {
     @PostMapping
     public ResponseEntity<User> createUser(@RequestBody UserDTO userDto) {
         try {
-            System.out.println("Datos de recidor " +userDto.getEmail() +" "+ userDto.getName());
+            logger.info("Datos de recibidor: Email={}, Nombre={}", userDto.getEmail(), userDto.getName());
 
             User user = new User();
             user.setName(userDto.getName());
@@ -38,7 +41,7 @@ public class UserController {
 
             // Mapear otros campos según sea necesario
 
-            System.out.println("Datos de nuevo usuario " +userDto.getEmail() +" "+ userDto.getName());
+            logger.info("Datos de nuevo usuario: Email={}, Nombre={}", userDto.getEmail(), userDto.getName());
 
             User createdUser = userService.createUser(user);
             return ResponseEntity.ok(createdUser);
