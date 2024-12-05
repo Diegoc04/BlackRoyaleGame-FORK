@@ -12,6 +12,8 @@ import com.escuelagaing.edu.co.service.RoomService;
 import com.escuelagaing.edu.co.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -20,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
 public class BlackJackSocketIOConfig {
+    private static final Logger logger = LoggerFactory.getLogger(BlackJackSocketIOConfig.class);
     private static final String SALA_PREFIX = "Sala ";
     private static final String ERROR_PREFIX = "error";
     private static final String BETERROR_PREFIX = "betError";
@@ -52,7 +55,7 @@ public class BlackJackSocketIOConfig {
             String playerId = client.getHandshakeData().getSingleUrlParam("id");
     
             if (playerId == null || playerId.isEmpty()) {
-                System.out.println("[ERROR] Conexión rechazada: Player ID no proporcionado.");
+                logger.error("Conexión rechazada: Player ID no proporcionado.");
                 client.disconnect();
                 return;
             }
@@ -60,12 +63,12 @@ public class BlackJackSocketIOConfig {
             // Si ya existe una conexión para este jugador, desconectar la anterior
             socketToPlayerId.values().removeIf(existingPlayerId -> existingPlayerId.equals(playerId));
     
-            System.out.println("Player connected! Player ID: " + playerId);
+            logger.info("Player connected! Player ID: {}", playerId);
             socketToPlayerId.put(client.getSessionId().toString(), playerId);
     
             // Inicializar salas si no están cargadas
             if (rooms.isEmpty()) {
-                System.out.println("[INFO] Inicializando salas desde RoomService en la conexión.");
+                logger.info("Inicializando salas desde RoomService en la conexión.");
                 initializeRooms();
             }
     
@@ -81,9 +84,9 @@ private void initializeRooms() {
         for (Room room : initialRooms) {
             rooms.put(room.getRoomId(), room);
         }
-        System.out.println("[INFO] Salas inicializadas desde RoomService: " + rooms.keySet());
+        logger.info("Salas inicializadas desde RoomService: {}", rooms.keySet());
     } else {
-        System.out.println("[INFO] No hay salas disponibles para inicializar.");
+        logger.info("No hay salas disponibles para inicializar.");
     }
 }
 
@@ -93,7 +96,7 @@ private void sendRoomsUpdateToClient(SocketIOClient client) {
             .collect(Collectors.toList());
 
     client.sendEvent("roomsUpdate", allRoomsState);
-    System.out.println("Salas enviadas al cliente: " + allRoomsState);
+    logger.info("Salas enviadas al cliente: {}", allRoomsState);
 }
 
     
@@ -106,7 +109,7 @@ private DisconnectListener onDisconnected() {
         String roomId = socketToRoomId.remove(sessionId);
 
         if (playerId == null || roomId == null) {
-            System.out.println("[ERROR] No se encontró información para el session ID: " + sessionId);
+            logger.error("No se encontró información para el session ID: {}", sessionId);
             return;
         }
 
@@ -116,16 +119,16 @@ private DisconnectListener onDisconnected() {
 
             if (player != null) {
                 player.setDisconnected(true);
-                System.out.println("Player " + player.getId() + " marked as disconnected.");
+                logger.info("Player {} marked as disconnected.", player.getId());
 
                 if (room.getStatus() != RoomStatus.EN_JUEGO) {
-                    System.out.println("Eliminando jugador desconectado durante la fase " + room.getStatus() + ": " + playerId);
+                    logger.info("Eliminando jugador desconectado durante la fase {}: {}", room.getStatus(), playerId);
                     room.removePlayer(player);
 
                 } else {
                     // Si está en juego
                     if (player.getInTurn()) {
-                        System.out.println("Player was in turn. Passing to next player.");
+                        logger.info("Player was in turn. Passing to next player.");
                         player.setInTurn(false);
                         room.getGame().nextPlayer();
                     } 
@@ -134,15 +137,15 @@ private DisconnectListener onDisconnected() {
                 // Si después de eliminar, la sala queda vacía
                 if (room.getPlayers().isEmpty()) {
                     room.resetRoom();
-                    System.out.println(SALA_PREFIX + roomId + " reiniciada y puesta en estado EN_ESPERA.");
+                    logger.info("{}{} reiniciada y puesta en estado EN_ESPERA.", SALA_PREFIX, roomId);
                 }
 
                 sendRoomUpdate(roomId);
             } else {
-                System.err.println("[ERROR] Jugador no encontrado en la sala. Player ID: " + playerId);
+                logger.error("Jugador no encontrado en la sala. Player ID: {}", playerId);
             }
         } else {
-            System.err.println("[ERROR] Sala no encontrada para Room ID: " + roomId);
+            logger.error("Sala no encontrada para Room ID: {}", roomId);
         }
     };
 }
@@ -163,7 +166,7 @@ private DataListener<JoinRoomPayload> joinRoomListener() {
         // Verificar si el jugador ya está en la sala
         Room room = rooms.get(roomId);
         if (room != null && room.getPlayerById(playerId) != null) {
-            System.out.println("El jugador ya está en la sala, no se puede unir de nuevo.");
+            logger.info("El jugador ya está en la sala, no se puede unir de nuevo.");
             return;
         }
 
@@ -177,7 +180,7 @@ private DataListener<JoinRoomPayload> joinRoomListener() {
         User user = userOptional.get();
         String playerName = user.getNickName();
 
-        System.out.println("Player: " + playerName + " con ID: " + playerId + " se unió a la sala " + roomId);
+        logger.info("Player: {} con ID: {} se unió a la sala {}", playerName, playerId, roomId);
         client.joinRoom(roomId);
 
         // Actualizar el mapeo socketToRoomId
@@ -199,11 +202,11 @@ private DataListener<JoinRoomPayload> joinRoomListener() {
 
         Player player = new Player(user, playerName, roomId, user.getAmount());
 
-        System.out.println("Jugador creado: ID=" + playerId + ", Nombre=" + playerName + ", RoomId=" + roomId + ", Saldo=" + player.getAmount());
+        logger.info("Jugador creado: ID={}, Nombre={}, RoomId={}, Saldo={}", playerId, playerName, roomId, player.getAmount());
 
         if (room.addPlayer(player)) {
             sendRoomUpdate(roomId);
-            System.out.println("Enviando actualización de la sala después de que el jugador se una");
+            logger.info("Enviando actualización de la sala después de que el jugador se una");
         } else {
             client.sendEvent(ERROR_PREFIX, "La sala ya está llena o no se puede unir.");
         }
@@ -228,14 +231,14 @@ private DataListener<ChatMessage> chatMessageListener() {
         ChatMessage chatMessage = new ChatMessage(sender, message.getMessage(), roomId);
         server.getRoomOperations(roomId).sendEvent("receiveMessage", chatMessage);
 
-        System.out.println("Mensaje retransmitido en sala " + roomId + " por " + sender + ": " + message.getMessage());
+        logger.info("Mensaje retransmitido en sala {} por {}: {}", roomId, sender, message.getMessage());
     };
 }
 
 
 private DataListener<String> leaveRoomListener() {
     return (client, roomId, ackSender) -> {
-        System.out.println("Client left Blackjack room: " + roomId);
+        logger.info("Client left Blackjack room: {}", roomId);
         client.leaveRoom(roomId); // El cliente abandona la sala.
 
         Room room = rooms.get(roomId); // Obtén la sala del mapa.
@@ -246,16 +249,16 @@ private DataListener<String> leaveRoomListener() {
 
             if (player != null) {
                 room.removePlayer(player); // Remueve al jugador de la sala.
-                System.out.println("Jugador " + playerName + " eliminado de la sala " + roomId);
+                logger.info("Jugador {} eliminado de la sala {}", playerName, roomId);
             }
 
             // Si la sala queda vacía, reiníciala para que esté disponible nuevamente.
             if (room.getPlayers().isEmpty()) {
                 room.resetRoom();
-                System.out.println(SALA_PREFIX + roomId + " reiniciada y puesta en estado EN_ESPERA.");
+                logger.info("{}{} reiniciada y puesta en estado EN_ESPERA.", SALA_PREFIX, roomId);
             } else if (room.getPlayers().size() < room.getMinPlayers() && room.getStatus() == RoomStatus.EN_JUEGO) {
                 room.setStatus(RoomStatus.FINALIZADO); // Cambiar estado si no hay jugadores suficientes.
-                System.out.println(SALA_PREFIX + roomId + " marcada como FINALIZADA.");
+                logger.info("{}{} marcada como FINALIZADA.", SALA_PREFIX, roomId);
             }
 
             sendRoomUpdate(roomId); // Notifica a los clientes sobre el cambio en la sala.
@@ -269,8 +272,8 @@ private DataListener<String> leaveRoomListener() {
             String roomId = data.getRoomId();
             List<String> chipColors = data.getFichas();
 
-            System.out.println("Evento playerBet recibido con las fichas: " + chipColors);
-            System.out.println("roomId recibido: " + roomId);
+            logger.info("Evento playerBet recibido con las fichas: {}", chipColors);
+            logger.info("roomId recibido: {}", roomId);
 
             String playerId = socketToPlayerId.get(client.getSessionId().toString());
 
@@ -280,8 +283,8 @@ private DataListener<String> leaveRoomListener() {
                 if (player != null) {
                     if (player.placeBet(chipColors)) {
                         player.setHasCompletedBet(true);
-                        System.out.println("Apuesta realizada por " + player.getName() + ": " + player.getBet());
-                        System.out.println("Saldo después de apuesta: " + player.getAmount());
+                        logger.info("Apuesta realizada por {}: {}", player.getName(), player.getBet());
+                        logger.info("Saldo después de apuesta: {}", player.getAmount());
                         sendRoomUpdate(roomId);
                         boolean allPlayersCompletedBet = room.getPlayers().stream().allMatch(Player::hasCompletedBet);
                         if (allPlayersCompletedBet) {
@@ -307,7 +310,8 @@ private DataListener<String> leaveRoomListener() {
             String actionType = data.getType();
             String playerId = socketToPlayerId.get(client.getSessionId().toString());
             
-            System.out.println("Acción del jugador recibida: " + actionType + " en la sala " + roomId);
+            logger.info("Acción del jugador recibida: {} en la sala {}", actionType, roomId);
+
 
             Room room = rooms.get(roomId);
             if (room != null && room.getStatus() == RoomStatus.EN_JUEGO) {
@@ -359,9 +363,9 @@ private DataListener<String> leaveRoomListener() {
             try {
                 ObjectMapper objectMapper = new ObjectMapper();
                 String jsonString = objectMapper.writeValueAsString(roomState);
-                System.out.println("JSON enviado a roomUpdate: " + jsonString);
+                logger.debug("JSON enviado a roomUpdate: {}", jsonString);
             } catch (Exception e) {
-                System.err.println("Error al convertir RoomStateDTO a JSON: " + e.getMessage());
+                logger.error("Error al convertir RoomStateDTO a JSON: {}", e.getMessage(), e);
             }
             server.getRoomOperations(roomId).sendEvent("roomUpdate", roomState);
         }
@@ -374,7 +378,7 @@ private DataListener<String> leaveRoomListener() {
                 .collect(Collectors.toList());
     
         server.getBroadcastOperations().sendEvent("roomsUpdate", allRoomsState);
-        System.out.println("Broadcast de salas actualizado: " + allRoomsState);
+        logger.info("Broadcast de salas actualizado: {}", allRoomsState);
     }
     
     public void start() {
