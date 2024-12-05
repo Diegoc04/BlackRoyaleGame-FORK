@@ -28,27 +28,29 @@ public class UserController {
         this.userService = userService;
     }
 
-    // Crear un nuevo usuario
     @PostMapping
     public ResponseEntity<User> createUser(@RequestBody UserDTO userDto) {
         try {
-            logger.info("Datos de recibidor: Email={}, Nombre={}", userDto.getEmail(), userDto.getName());
+            logger.info("Solicitud recibida para crear un nuevo usuario.");
 
             User user = new User();
             user.setName(userDto.getName());
             user.setEmail(userDto.getEmail());
             user.setNickName("NULL");
 
-            // Mapear otros campos según sea necesario
-
-            logger.info("Datos de nuevo usuario: Email={}, Nombre={}", userDto.getEmail(), userDto.getName());
+            logger.info("Creando usuario en el sistema.");
 
             User createdUser = userService.createUser(user);
+
+            logger.info("Usuario creado exitosamente.");
+
             return ResponseEntity.ok(createdUser);
         } catch (RuntimeException e) {
+            logger.error("Error al crear el usuario.", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
     }
+
 
     public ResponseEntity<List<Map<String, Object>>> getUserGameHistory(@PathVariable String id) {
         try {
