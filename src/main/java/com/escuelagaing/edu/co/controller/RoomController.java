@@ -1,5 +1,6 @@
 package com.escuelagaing.edu.co.controller;
 
+import com.escuelagaing.edu.co.dto.RoomDTO;
 import com.escuelagaing.edu.co.model.Room;
 import com.escuelagaing.edu.co.service.RoomService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,9 +39,11 @@ public class RoomController {
     }
 
     @PutMapping
-    public Room updateRoom(@RequestBody Room room) {
-        return roomService.updateRoom(room);
+    public Room updateRoom(@RequestBody RoomDTO roomDTO) {
+        // Usa el servicio para actualizar la entidad
+        return roomService.updateRoom(roomDTO);
     }
+
 
     @DeleteMapping("/{roomId}")
     public ResponseEntity<Void> deleteRoom(@PathVariable String roomId) {
