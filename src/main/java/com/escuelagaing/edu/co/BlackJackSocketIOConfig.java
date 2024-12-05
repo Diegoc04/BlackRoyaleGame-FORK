@@ -16,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -425,11 +424,12 @@ private DataListener<BetPayload> playerBetListener() {
     public void sendRoomsUpdate() {
         List<RoomStateDTO> allRoomsState = rooms.values().stream()
                 .map(Room::buildRoomState)
-                .collect(Collectors.toList());
+                .toList(); // Uso de Stream.toList()
     
         server.getBroadcastOperations().sendEvent("roomsUpdate", allRoomsState);
         logger.info("Broadcast de salas actualizado: {}", allRoomsState);
     }
+    
     
     public void start() {
         server.start();
