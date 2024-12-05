@@ -62,11 +62,12 @@ public class Game {
         for (Player player : players) {
             player.addCard(deck.drawCard());
             player.addCard(deck.drawCard());
-            logger.info("Jugador: " + player.getName() + " - Cartas: " + player.getHand() + SCORE_TEXT + player.calculateScore());
+            logger.info("{}{} - Cartas: {}{}{}", 
+                    JUGADOR_PREFIX, player.getName(), player.getHand(), SCORE_TEXT, player.calculateScore());
         }
         dealer.addCard(deck.drawCard());
         dealer.addCard(deck.drawCard());
-        logger.info("Dealer - Cartas: " + dealer.getHand() + SCORE_TEXT + dealer.calculateScore());
+        logger.info("Dealer - Cartas: {}{}{}", dealer.getHand(), SCORE_TEXT, dealer.calculateScore());
         startPhaseTurns();
     }
 
@@ -84,7 +85,7 @@ public class Game {
     
             if (!firstPlayer.isDisconnected()) {
                 firstPlayer.setInTurn(true);
-                logger.info("Iniciando turno de " + firstPlayer.getNickName());
+                logger.info("Iniciando turno de {}", firstPlayer.getNickName());
             } else {
                 logger.info("Todos los jugadores están desconectados. Finalizando el juego.");
                 dealerTurn();
@@ -106,7 +107,7 @@ public class Game {
             return; 
         }
     
-        logger.info("Turno de: " + player.getNickName() + " con acción: " + action);
+        logger.info("Turno de: {} con acción: {}", player.getNickName(), action);
         try {
             decideAction(player, action); 
         } catch (Exception e) {
@@ -126,9 +127,9 @@ public void decideAction(Player player, PlayerAction action) {
         case HIT:
         player.addCard(deck.drawCard());
         int currentScore = player.calculateScore();
-        logger.info(JUGADOR_PREFIX + player.getName() + " realizó HIT - Puntuación actual: " + currentScore);
+        logger.info("{} realizó HIT - Puntuación actual: {}", JUGADOR_PREFIX + player.getName(), currentScore);
         if (currentScore > 21) {
-            logger.info(JUGADOR_PREFIX + player.getName() + " se pasó de 21. Fin de turno.");
+            logger.info("{} se pasó de 21. Fin de turno.", JUGADOR_PREFIX + player.getName());
             player.setfinishTurn(true);
             player.setInTurn(false);
         }
@@ -213,14 +214,14 @@ public void decideAction(Player player, PlayerAction action) {
        
         winners.clear();
     
-        logger.info("Puntuación del Dealer: " + dealerScore);
+        logger.info("Puntuación del Dealer: {}", dealerScore);
     
         for (Player player : players) {
             int playerScore = player.calculateScore();
-            logger.info("Jugador: " + player.getName() + " - Cartas: " + player.getHand() + SCORE_TEXT + playerScore);
+            logger.info("{} - Cartas: {}{}", player.getName(), player.getHand(), SCORE_TEXT);
     
             if (playerScore > 21) {
-                logger.info(JUGADOR_PREFIX + player.getName() + " se pasó de 21.");
+                logger.info("{} se pasó de 21.", JUGADOR_PREFIX + player.getName());
                 continue; 
             }
     
@@ -236,7 +237,7 @@ public void decideAction(Player player, PlayerAction action) {
         }
         
         if (winners.isEmpty()) {
-            logger.info("El Dealer gana con una puntuación de: " + dealerScore);
+            logger.info("El Dealer gana con una puntuación de: {}", dealerScore);
             winners.add(dealer); 
         }
 
@@ -268,7 +269,7 @@ public void decideAction(Player player, PlayerAction action) {
         if (attempts > 0) { 
             Player nextPlayer = players.get(currentPlayerIndex);
             nextPlayer.setInTurn(true);
-            logger.info("Turno pasado a: " + nextPlayer.getNickName());
+            logger.info("Turno pasado a: {}", nextPlayer.getNickName());
         } else { 
             logger.info("Todos los jugadores han terminado su turno o están desconectados. Finalizando el juego.");
             dealerTurn();
