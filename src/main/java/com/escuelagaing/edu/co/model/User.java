@@ -3,7 +3,6 @@ package com.escuelagaing.edu.co.model;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -86,6 +85,7 @@ public class User {
 
    public void addGameToHistory(RoomStateDTO gameState) {
     ObjectMapper objectMapper = new ObjectMapper();
+    @SuppressWarnings("unchecked")
     Map<String, Object> gameData = objectMapper.convertValue(gameState, Map.class);
     this.gameHistory.add(gameData);
 }

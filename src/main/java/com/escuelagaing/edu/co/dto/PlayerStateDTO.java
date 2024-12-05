@@ -18,15 +18,16 @@ public class PlayerStateDTO {
     private double bet;
     private boolean isInTurn;
 
-   @PersistenceConstructor
-public PlayerStateDTO(String nickName, double amount, List<Card> hand, List<Chip> chips, double bet, boolean isInTurn) {
-    this.nickName = nickName;
-    this.amount = amount;
-    this.hand = hand;
-    this.chips = chips;
-    this.bet = bet;
-    this.isInTurn = isInTurn;
-}
+    @SuppressWarnings("deprecation")
+    @PersistenceConstructor
+    public PlayerStateDTO(String nickName, double amount, List<Card> hand, List<Chip> chips, double bet, boolean isInTurn) {
+        this.nickName = nickName;
+        this.amount = amount;
+        this.hand = hand;
+        this.chips = chips;
+        this.bet = bet;
+        this.isInTurn = isInTurn;
+    }
 
     public PlayerStateDTO(Player player) {
         this.nickName = player.getUser().getNickName();

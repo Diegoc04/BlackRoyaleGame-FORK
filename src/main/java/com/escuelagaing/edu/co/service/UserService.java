@@ -4,7 +4,6 @@ package com.escuelagaing.edu.co.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.escuelagaing.edu.co.repository.UserRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.escuelagaing.edu.co.dto.RoomStateDTO;
 import com.escuelagaing.edu.co.model.User;
 
