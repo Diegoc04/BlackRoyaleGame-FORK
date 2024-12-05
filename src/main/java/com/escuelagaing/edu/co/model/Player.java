@@ -9,9 +9,9 @@ import org.slf4j.LoggerFactory;
 public class Player {
     private static final Logger logger = LoggerFactory.getLogger(Player.class);
     private User user; 
-    public String name;
+    private String name;
     private String roomId; // ID de la sala a la que pertenece el jugador
-    public List<Card> hand;
+    private List<Card> hand;
     private double amount;
     private double bet;
     private boolean finishTurn;

@@ -188,15 +188,12 @@ public void decideAction(Player player, PlayerAction action) {
     }
 
     public void deliverProfit() {
-        List<Player> winners = calculateWinners();
+        winners = calculateWinners();
         for (Player player : players) {
-            if (winners.contains(player)) {
-                player.revenue(true); 
-            } else {
-                player.revenue(false); 
-            }
+            player.revenue(winners.contains(player)); // Simplificación del if-then-else
         }
     }
+    
 
     public void deletePlayer(String playerId) {
         for (Player player : players) {
