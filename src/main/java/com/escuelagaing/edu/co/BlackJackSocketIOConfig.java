@@ -92,15 +92,12 @@ private void initializeRooms() {
 
 private void sendRoomsUpdateToClient(SocketIOClient client) {
     List<RoomStateDTO> allRoomsState = rooms.values().stream()
-            .map(Room::buildRoomState)
-            .collect(Collectors.toList());
+        .map(Room::buildRoomState)
+        .toList(); // Cambiado a toList()
 
     client.sendEvent("roomsUpdate", allRoomsState);
     logger.info("Salas enviadas al cliente: {}", allRoomsState);
 }
-
-    
-
 
 private DisconnectListener onDisconnected() {
     return client -> {
@@ -149,7 +146,7 @@ private void markPlayerAsDisconnected(Player player) {
 
 private void handleRoomLogic(Room room, Player player, String roomId) {
     if (room.getStatus() != RoomStatus.EN_JUEGO) {
-        removePlayerFromRoom(room, player, roomId);
+        removePlayerFromRoom(room, player);
     } else {
         handleInGameLogic(room, player);
     }
@@ -161,7 +158,7 @@ private void handleRoomLogic(Room room, Player player, String roomId) {
     sendRoomUpdate(roomId);
 }
 
-private void removePlayerFromRoom(Room room, Player player, String roomId) {
+private void removePlayerFromRoom(Room room, Player player) {
     logger.info("Eliminando jugador desconectado durante la fase {}: {}", room.getStatus(), player.getId());
     room.removePlayer(player);
 }
@@ -191,7 +188,7 @@ private DataListener<JoinRoomPayload> joinRoomListener() {
         if (hasInvalidData(client, playerId, roomId)) return;
 
         Room room = getOrCreateRoom(roomId);
-        if (isPlayerAlreadyInRoom(client, room, playerId)) return;
+        if (isPlayerAlreadyInRoom(room, playerId)) return;
 
         Optional<User> userOptional = userService.getUserById(playerId);
         if (userNotFound(client, userOptional, playerId)) return;
@@ -231,7 +228,7 @@ private Room getOrCreateRoom(String roomId) {
     });
 }
 
-private boolean isPlayerAlreadyInRoom(SocketIOClient client, Room room, String playerId) {
+private boolean isPlayerAlreadyInRoom(Room room, String playerId) {
     if (room != null && room.getPlayerById(playerId) != null) {
         logger.info("El jugador ya está en la sala, no se puede unir de nuevo.");
         return true;
