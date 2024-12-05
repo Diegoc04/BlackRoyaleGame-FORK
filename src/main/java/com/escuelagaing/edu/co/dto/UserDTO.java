@@ -9,8 +9,7 @@ public class UserDTO {
     }
 
     public UserDTO(String email, String name) {
-        this.email = email;
-        this.name = name;
+        this(email, name, null); // Llamada al constructor con todos los parámetros
     }
 
     public UserDTO(String email, String name, String nickName) {
