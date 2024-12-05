@@ -4,6 +4,7 @@ package com.escuelagaing.edu.co.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.escuelagaing.edu.co.repository.UserRepository;
+import com.escuelagaing.edu.co.Exception.UserServiceException;
 import com.escuelagaing.edu.co.dto.RoomStateDTO;
 import com.escuelagaing.edu.co.model.User;
 
@@ -24,7 +25,7 @@ public class UserService {
     // Crear un nuevo usuario
     public User createUser(User user) {
         if (userRepository.existsById(user.getEmail())) {
-            throw new RuntimeException("El usuario con email " + user.getEmail() + " ya existe.");
+            throw new UserServiceException.UserAlreadyExistsException(user.getEmail());
         }
         return userRepository.save(user);
     }
@@ -40,7 +41,7 @@ public class UserService {
             user.addGameToHistory(gameState); 
             userRepository.save(user);
         } else {
-            throw new IllegalArgumentException("Usuario no encontrado con ID: " + userId);
+            throw new UserServiceException.UserNotFoundException(userId);
         }
     }
 
@@ -49,7 +50,7 @@ public class UserService {
         if (userOptional.isPresent()) {
             return userOptional.get().getGameHistory();
         } else {
-            throw new IllegalArgumentException("Usuario no encontrado con ID: " + userId);
+            throw new UserServiceException.UserNotFoundException(userId);
         }
     }
     
@@ -61,18 +62,14 @@ public class UserService {
                     user.setAmount(userDetails.getAmount());
                     return userRepository.save(user);
                 })
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con id: " + id));
+                .orElseThrow(() -> new UserServiceException.UserNotFoundException(id));
     }
 
 
     public void deleteUser(String id) {
         if (!userRepository.existsById(id)) {
-            throw new RuntimeException("Usuario no encontrado con id: " + id);
+            throw new UserServiceException.UserNotFoundException(id);
         }
         userRepository.deleteById(id);
     }
-
-
-
-    
 }
