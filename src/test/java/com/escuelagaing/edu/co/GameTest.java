@@ -56,7 +56,6 @@ class GameTest {
     }
 
     void simulateGameEnd(Game game) {
-        // Simular las manos de los jugadores y el dealer
         Player player1 = game.getPlayers().get(0);
         Player player2 = game.getPlayers().get(1);
         
@@ -69,6 +68,6 @@ class GameTest {
         game.getDealer().addCard(new Card("Corazones", "9", 9));
         game.getDealer().addCard(new Card("Picas", "10", 10));
         
-        game.endGame();  // Llamar a endGame para calcular ganadores
+        game.endGame();
     }
 }

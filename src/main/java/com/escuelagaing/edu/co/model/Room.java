@@ -10,12 +10,15 @@ import org.springframework.data.annotation.Transient;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Document(collection = "Room") 
 
 public class Room {
+
+    private static final Logger logger = LoggerFactory.getLogger(Room.class);
+
     @Id
     private String id;
        
@@ -42,20 +45,9 @@ public class Room {
         this.status = RoomStatus.EN_ESPERA;  
     }
 
-    public Player getPlayer(String playerId) {
-        for (Player player : players) {
-            if (player.getId().equals(playerId)) {
-                return player;
-            }
-        }
-        return null; 
-    }
     public int getMaxPlayers() {
         return maxPlayers;
     }
-
-
-
 
     public RoomStateDTO buildRoomState() {
         List<Player> winners = (game != null && !game.isActive()) ? game.calculateWinners() : List.of();
@@ -147,14 +139,12 @@ public class Room {
     }
     
 
-
     public void endBetting() {
-        System.out.println("Fase de apuestas finalizada.");
+        logger.info("Fase de apuestas finalizada."); // Usar el logger aquí
         this.status = RoomStatus.EN_JUEGO;
         startGame(); // Iniciar el juego después de la fase de apuestas
     }
 
-   
     public void resetRoom() {
         if (game != null) {
             game.resetGame();  
