@@ -2,9 +2,12 @@ package com.escuelagaing.edu.co.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 public class Player {
-
+    private static final Logger logger = LoggerFactory.getLogger(Player.class);
     private User user; 
     public String name;
     private String roomId; // ID de la sala a la que pertenece el jugador
@@ -14,7 +17,7 @@ public class Player {
     private boolean finishTurn;
     private PlayerAction estado;
     private ArrayList<Chip> availableChips;
-    private String NickName;
+    private String nickName;
     private boolean hasBet = false;
     private boolean isTurn;
     private boolean disconnected = false;
@@ -51,7 +54,7 @@ public class Player {
         this.finishTurn = false;
         this.estado = null;  
         this.availableChips = new ArrayList<>(); 
-        this.NickName = null;
+        this.nickName = null;
         this.isTurn = false;
 
     }
@@ -66,11 +69,11 @@ public class Player {
 
 
     public void setNickName(String name){
-        this.NickName = name;
+        this.nickName = name;
 
     }
     public String getNickName(){
-        return this.NickName;
+        return this.nickName;
     }
 
     public String getId(){
@@ -202,7 +205,7 @@ public class Player {
             aceCount--;
         }
     
-        System.out.println("Puntuación calculada: " + score + " con cartas: " + hand);
+        logger.info("Puntuación calculada: {} con cartas: {}", score, hand);
         return score;
     }
 
@@ -218,7 +221,7 @@ public class Player {
             try {
                 chips.add(Chip.fromColor(color));
             } catch (IllegalArgumentException e) {
-                System.out.println("Color de ficha no válido: " + color);
+                logger.warn("Color de ficha no válido: {}", color);
                 return false;
             }
         }
@@ -226,7 +229,7 @@ public class Player {
         double totalBetValue = chips.stream().mapToDouble(Chip::getValue).sum();
     
         if (totalBetValue > user.getAmount()) { 
-            System.out.println("Saldo insuficiente para realizar esta apuesta.");
+            logger.info("Saldo insuficiente para realizar esta apuesta.");
             return false;
         }
     
@@ -235,7 +238,7 @@ public class Player {
         this.availableChips.clear();
         this.availableChips.addAll(chips);
         this.hasBet = true;
-        System.out.println("Apuesta realizada: " + totalBetValue + ". Saldo restante: " + user.getAmount());
+        logger.info("Apuesta realizada: {}. Saldo restante: {}", totalBetValue, user.getAmount());
         return true;
     }
 
