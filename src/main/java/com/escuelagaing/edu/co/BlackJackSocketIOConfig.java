@@ -109,46 +109,76 @@ private DisconnectListener onDisconnected() {
         String roomId = socketToRoomId.remove(sessionId);
 
         if (playerId == null || roomId == null) {
-            logger.error("No se encontró información para el session ID: {}", sessionId);
+            logMissingSessionInfo(sessionId);
             return;
         }
 
         Room room = rooms.get(roomId);
-        if (room != null) {
-            Player player = room.getPlayerById(playerId);
-
-            if (player != null) {
-                player.setDisconnected(true);
-                logger.info("Player {} marked as disconnected.", player.getId());
-
-                if (room.getStatus() != RoomStatus.EN_JUEGO) {
-                    logger.info("Eliminando jugador desconectado durante la fase {}: {}", room.getStatus(), playerId);
-                    room.removePlayer(player);
-
-                } else {
-                    // Si está en juego
-                    if (player.getInTurn()) {
-                        logger.info("Player was in turn. Passing to next player.");
-                        player.setInTurn(false);
-                        room.getGame().nextPlayer();
-                    } 
-                }
-
-                // Si después de eliminar, la sala queda vacía
-                if (room.getPlayers().isEmpty()) {
-                    room.resetRoom();
-                    logger.info("{}{} reiniciada y puesta en estado EN_ESPERA.", SALA_PREFIX, roomId);
-                }
-
-                sendRoomUpdate(roomId);
-            } else {
-                logger.error("Jugador no encontrado en la sala. Player ID: {}", playerId);
-            }
-        } else {
-            logger.error("Sala no encontrada para Room ID: {}", roomId);
+        if (room == null) {
+            logMissingRoomInfo(roomId);
+            return;
         }
+
+        handlePlayerDisconnection(room, playerId, roomId);
     };
 }
+
+private void logMissingSessionInfo(String sessionId) {
+    logger.error("No se encontró información para el session ID: {}", sessionId);
+}
+
+private void logMissingRoomInfo(String roomId) {
+    logger.error("Sala no encontrada para Room ID: {}", roomId);
+}
+
+private void handlePlayerDisconnection(Room room, String playerId, String roomId) {
+    Player player = room.getPlayerById(playerId);
+    if (player == null) {
+        logger.error("Jugador no encontrado en la sala. Player ID: {}", playerId);
+        return;
+    }
+
+    markPlayerAsDisconnected(player);
+    handleRoomLogic(room, player, roomId);
+}
+
+private void markPlayerAsDisconnected(Player player) {
+    player.setDisconnected(true);
+    logger.info("Player {} marked as disconnected.", player.getId());
+}
+
+private void handleRoomLogic(Room room, Player player, String roomId) {
+    if (room.getStatus() != RoomStatus.EN_JUEGO) {
+        removePlayerFromRoom(room, player, roomId);
+    } else {
+        handleInGameLogic(room, player);
+    }
+
+    if (room.getPlayers().isEmpty()) {
+        resetRoom(room, roomId);
+    }
+
+    sendRoomUpdate(roomId);
+}
+
+private void removePlayerFromRoom(Room room, Player player, String roomId) {
+    logger.info("Eliminando jugador desconectado durante la fase {}: {}", room.getStatus(), player.getId());
+    room.removePlayer(player);
+}
+
+private void handleInGameLogic(Room room, Player player) {
+    if (player.getInTurn()) {
+        logger.info("Player was in turn. Passing to next player.");
+        player.setInTurn(false);
+        room.getGame().nextPlayer();
+    }
+}
+
+private void resetRoom(Room room, String roomId) {
+    room.resetRoom();
+    logger.info("{}{} reiniciada y puesta en estado EN_ESPERA.", SALA_PREFIX, roomId);
+}
+
 
 
     
