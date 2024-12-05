@@ -188,24 +188,13 @@ private DataListener<JoinRoomPayload> joinRoomListener() {
         String playerId = data.getUserId();
         String roomId = data.getRoomId();
 
-        if (playerId == null || roomId == null) {
-            client.sendEvent(ERROR_PREFIX, "Datos insuficientes para unirse a la sala.");
-            return;
-        }
+        if (hasInvalidData(client, playerId, roomId)) return;
 
-        // Verificar si el jugador ya está en la sala
-        Room room = rooms.get(roomId);
-        if (room != null && room.getPlayerById(playerId) != null) {
-            logger.info("El jugador ya está en la sala, no se puede unir de nuevo.");
-            return;
-        }
+        Room room = getOrCreateRoom(roomId);
+        if (isPlayerAlreadyInRoom(client, room, playerId)) return;
 
-        // Obtener el jugador desde el servicio de usuarios
         Optional<User> userOptional = userService.getUserById(playerId);
-        if (!userOptional.isPresent()) {
-            client.sendEvent(ERROR_PREFIX, "Usuario no encontrado con ID: " + playerId);
-            return;
-        }
+        if (userNotFound(client, userOptional, playerId)) return;
 
         User user = userOptional.get();
         String playerName = user.getNickName();
@@ -213,35 +202,72 @@ private DataListener<JoinRoomPayload> joinRoomListener() {
         logger.info("Player: {} con ID: {} se unió a la sala {}", playerName, playerId, roomId);
         client.joinRoom(roomId);
 
-        // Actualizar el mapeo socketToRoomId
         socketToRoomId.put(client.getSessionId().toString(), roomId);
 
-        if (room == null) {
-            room = new Room();
-            room.setId(roomId);
-            rooms.put(roomId, room);
-        }
-
-        if (room.getStatus() == RoomStatus.EN_JUEGO) {
-            client.sendEvent(ERROR_PREFIX, "No puedes unirte. El juego ya ha comenzado.");
-            return;
-        } else if (room.getStatus() == RoomStatus.FINALIZADO) {
-            client.sendEvent(ERROR_PREFIX, "El juego ha finalizado.");
-            return;
-        }
+        if (roomHasInvalidStatus(client, room)) return;
 
         Player player = new Player(user, playerName, roomId, user.getAmount());
-
         logger.info("Jugador creado: ID={}, Nombre={}, RoomId={}, Saldo={}", playerId, playerName, roomId, player.getAmount());
 
-        if (room.addPlayer(player)) {
-            sendRoomUpdate(roomId);
+        if (addPlayerToRoom(client, room, player, roomId)) {
             logger.info("Enviando actualización de la sala después de que el jugador se una");
-        } else {
-            client.sendEvent(ERROR_PREFIX, "La sala ya está llena o no se puede unir.");
         }
     };
 }
+
+private boolean hasInvalidData(SocketIOClient client, String playerId, String roomId) {
+    if (playerId == null || roomId == null) {
+        client.sendEvent(ERROR_PREFIX, "Datos insuficientes para unirse a la sala.");
+        return true;
+    }
+    return false;
+}
+
+private Room getOrCreateRoom(String roomId) {
+    return rooms.computeIfAbsent(roomId, id -> {
+        Room newRoom = new Room();
+        newRoom.setId(id);
+        return newRoom;
+    });
+}
+
+private boolean isPlayerAlreadyInRoom(SocketIOClient client, Room room, String playerId) {
+    if (room != null && room.getPlayerById(playerId) != null) {
+        logger.info("El jugador ya está en la sala, no se puede unir de nuevo.");
+        return true;
+    }
+    return false;
+}
+
+private boolean userNotFound(SocketIOClient client, Optional<User> userOptional, String playerId) {
+    if (!userOptional.isPresent()) {
+        client.sendEvent(ERROR_PREFIX, "Usuario no encontrado con ID: " + playerId);
+        return true;
+    }
+    return false;
+}
+
+private boolean roomHasInvalidStatus(SocketIOClient client, Room room) {
+    if (room.getStatus() == RoomStatus.EN_JUEGO) {
+        client.sendEvent(ERROR_PREFIX, "No puedes unirte. El juego ya ha comenzado.");
+        return true;
+    } else if (room.getStatus() == RoomStatus.FINALIZADO) {
+        client.sendEvent(ERROR_PREFIX, "El juego ha finalizado.");
+        return true;
+    }
+    return false;
+}
+
+private boolean addPlayerToRoom(SocketIOClient client, Room room, Player player, String roomId) {
+    if (room.addPlayer(player)) {
+        sendRoomUpdate(roomId);
+        return true;
+    } else {
+        client.sendEvent(ERROR_PREFIX, "La sala ya está llena o no se puede unir.");
+        return false;
+    }
+}
+
 
 
 
