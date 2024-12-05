@@ -21,12 +21,27 @@ public class RoomStateDTO {
         this.status = (status != null) ? status.name() : "DESCONOCIDO";
         this.maxPlayers = maxPlayers;
         this.currentPlayers = (players != null) ? players.size() : 0;
-        this.players = (players != null) ? players.stream().map(PlayerStateDTO::new).toList() : List.of();
-        this.winners = (winners != null) 
-            ? winners.stream().map(player -> player instanceof Dealer ? "Dealer" : player.getUser().getNickName()).toList()
+    
+        // Procesar players
+        this.players = (players != null) 
+            ? players.stream().map(PlayerStateDTO::new).toList() 
             : List.of();
+    
+        // Procesar winners
+        if (winners != null) {
+            this.winners = winners.stream()
+                .map(player -> player instanceof Dealer 
+                    ? "Dealer" 
+                    : player.getUser().getNickName())
+                .toList();
+        } else {
+            this.winners = List.of();
+        }
+    
+        // Procesar dealerHand
         this.dealerHand = (dealerHand != null) ? dealerHand : List.of();
     }
+    
     
 
     public String getRoomId() {
