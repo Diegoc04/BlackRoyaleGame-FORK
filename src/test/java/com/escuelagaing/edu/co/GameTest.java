@@ -151,6 +151,4 @@ class GameTest {
         assertEquals(game.getDealer(), winners.get(0), "El dealer debe ganar si todos los jugadores se pasaron de 21");
     }
 
-
-
 }
