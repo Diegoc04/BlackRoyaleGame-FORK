@@ -98,8 +98,5 @@ public List<Map<String, Object>> getGameHistory() {
 public void setAmount(double amount){
     this.amount = amount;
 }
-     
-
-
 
 }
